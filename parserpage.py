@@ -6,14 +6,24 @@ import re
 from bs4 import BeautifulSoup
 import config as cfg
 from tqdm import tqdm
+import time
 
 
 def htmlparser(url):  #解析网页的函数
-    r = requests.get(url, headers=cfg.headers)  #get请求
-    r.raise_for_status()
-    r.encoding = r.apparent_encoding
-    content = r.text
-    soup = BeautifulSoup(content, "html.parser")
+    request_ok = False
+    soup = None
+    while(not request_ok):
+        try:
+            r = requests.get(url, headers=cfg.headers)  #get请求
+            r.raise_for_status()
+            r.encoding = r.apparent_encoding
+            content = r.text
+            soup = BeautifulSoup(content, "html.parser")
+            request_ok = True
+        except:
+            print('Request {} failed! wait and try againe...'.format(url))
+            time.sleep(1.5)
+
     return soup
 
 
@@ -30,6 +40,13 @@ def getclasses(url):
     return pick_url
 
 
+def transimagename(kcar_img_url):
+    jpg_path_start_idx = kcar_img_url.find('imgc')
+    jpg_path_end_idx = kcar_img_url.find('_')
+    jpg_name = '_'.join(
+        kcar_img_url[jpg_path_start_idx:jpg_path_end_idx].split('/'))
+    return jpg_name
+
 class ModelInfo:
     def __init__(self):
         self.model_name = ''  # 车型
@@ -45,15 +62,25 @@ def savemodelimg(model_info, save_model_image_dir):
         os.mkdir(save_model_image_dir)
     print('image urls num: ', len(urls))
     for img_url in urls:
+        request_ok = False
         image_name = transimagename(img_url)
         # 保存该车型图片
         image_save_path = os.path.join(save_model_image_dir,
                                         image_name)
-        img_req = requests.get(img_url, stream=True)
+        img_req = None
+        while(not request_ok):
+            try:
+                img_req = requests.get(img_url, stream=True)
+                request_ok = True
+            except:
+                print('save image url: {} failed! wait and try againe...'.format(img_url))
+                time.sleep(1.5)
+        
         with open(image_save_path, 'wb') as f:
             for chunk in img_req.iter_content(chunk_size=32):
                 f.write(chunk)
         print('save image: ' +  image_save_path + " done!")
+        time.sleep(0.5)
 
 
 def getmodelinfo(model_url_parent):
@@ -133,12 +160,6 @@ def getclassbrandurl(class_url):
         # return
 
 
-def transimagename(kcar_img_url):
-    jpg_path_start_idx = kcar_img_url.find('imgc')
-    jpg_path_end_idx = kcar_img_url.find('_')
-    jpg_name = '_'.join(
-        kcar_img_url[jpg_path_start_idx:jpg_path_end_idx].split('/'))
-    return jpg_name
 
 
 def spiderpipeline(base_url, save_dir_root):

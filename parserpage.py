@@ -53,7 +53,7 @@ class ModelInfo:
         self.urls = []  # 图片url地址
 
 def savemodelimg(model_info, save_model_image_dir):
-    model_name = model_info.model_name.strip().replace('/', '_')
+    model_name = model_info.model_name.strip().replace('/', '_').replace(' ', '_')  # 去除名字中的特殊字符包括空格
     urls = model_info.urls
     save_model_image_dir = os.path.join(save_dir_root, model_name)
     print('save_model_image_dir: ', save_model_image_dir)
@@ -80,7 +80,7 @@ def savemodelimg(model_info, save_model_image_dir):
             for chunk in img_req.iter_content(chunk_size=32):
                 f.write(chunk)
         print('save image: ' +  image_save_path + " done!")
-        time.sleep(0.5)
+        time.sleep(0.1)
 
 
 def getmodelinfo(model_url_parent):
